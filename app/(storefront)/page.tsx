@@ -6,6 +6,7 @@ import HeroSection from "@/components/HeroSection";
 import Reveal from "@/components/motion/Reveal";
 import AnimatedDiamondIcon from "@/components/motion/AnimatedDiamondIcon";
 import FloatingPetals from "@/components/motion/FloatingPetals";
+import OccasionSlider from "@/components/OccasionSlider";
 import type { ProductCardData } from "@/lib/types";
 
 export const revalidate = 300;
@@ -182,39 +183,8 @@ export default async function Home() {
             Find Your Piece
           </p>
           <h2 className="mt-2 font-display text-3xl text-foreground">Shop by occasion</h2>
-          <div className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-4">
-            {OCCASIONS.map((o, i) => (
-              <Link
-                key={o.name}
-                href={`/collections/${o.collectionSlug}`}
-                className="group relative aspect-4/5 overflow-hidden rounded-2xl shadow-sm transition-shadow hover:shadow-lg"
-              >
-                <Image
-                  src={o.image}
-                  alt=""
-                  fill
-                  sizes="(min-width: 640px) 25vw, 50vw"
-                  className={`object-cover transition duration-500 group-hover:scale-110 ${
-                    o.imagePosition === "right" ? "object-right" : ""
-                  }`}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
-                <span
-                  className={`absolute right-3 top-3 rounded-full px-2.5 py-1 text-[10px] font-medium uppercase tracking-wider text-white ${
-                    i % 2 === 0 ? "bg-rose/80" : "bg-green-dark/80"
-                  }`}
-                >
-                  {i < 2 ? "Daily" : "Bridal"}
-                </span>
-                <div className="absolute inset-x-0 bottom-0 p-4 text-left">
-                  <span className="block font-display text-lg text-white">{o.name}</span>
-                  <span className="mt-1 flex items-center gap-1 text-xs text-rose-soft opacity-0 transition group-hover:opacity-100">
-                    Shop now
-                    <span className="transition-transform group-hover:translate-x-1">→</span>
-                  </span>
-                </div>
-              </Link>
-            ))}
+          <div className="mt-10">
+            <OccasionSlider items={OCCASIONS} />
           </div>
         </div>
       </Reveal>
