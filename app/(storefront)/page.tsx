@@ -16,8 +16,8 @@ const OCCASIONS = [
   {
     name: "Everyday",
     collectionSlug: "daily-wear",
-    // unsplash.com/photos/a-close-up-of-a-bracelet-1pP4erq_nbo — Jocelyn Morales
-    image: "https://images.unsplash.com/photo-1655255114527-d0a834d9a774?w=800&q=80&auto=format&fit=crop",
+    // unsplash.com/photos/a-white-box-with-gold-jewelry-on-it-MFmHV695pd4 — Nataliia Hordiiuk
+    image: "https://images.unsplash.com/photo-1682823544433-aae34df4e3da?w=800&q=80&auto=format&fit=crop",
   },
   {
     name: "Office",
@@ -29,8 +29,8 @@ const OCCASIONS = [
   {
     name: "Mehndi",
     collectionSlug: "bridal",
-    // unsplash.com/photos/left-human-hand-with-henna-HF2v2nLxd7w — Mee Nee
-    image: "https://images.unsplash.com/photo-1568566240146-a5e26db3b29b?w=800&q=80&auto=format&fit=crop",
+    // unsplash.com/photos/marigold-and-jasmine-flower-garlands-EEeGY0XgNSw — Sangram Rakate
+    image: "https://images.unsplash.com/photo-1789971649652-ae5dfeeaa7b4?w=800&q=80&auto=format&fit=crop",
   },
   {
     name: "Nikkah",
