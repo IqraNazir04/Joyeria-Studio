@@ -22,8 +22,9 @@ const OCCASIONS = [
   {
     name: "Office",
     collectionSlug: "daily-wear",
-    // unsplash.com/photos/modern-office-space-with-a-desk-computer-and-decor-ieDXimQcLeM — Deliberate Directions
-    image: "https://images.unsplash.com/photo-1746021535489-00edc5efb203?w=800&q=80&auto=format&fit=crop",
+    // unsplash.com/photos/magic-keyboard-beside-mug-and-click-pen-VieM9BdZKFo — Leone Venter
+    image: "https://images.unsplash.com/photo-1518655048521-f130df041f66?w=800&q=80&auto=format&fit=crop",
+    imagePosition: "right",
   },
   {
     name: "Mehndi",
@@ -34,8 +35,8 @@ const OCCASIONS = [
   {
     name: "Nikkah",
     collectionSlug: "bridal",
-    // unsplash.com/photos/two-gold-colored-rings-on-paper-YeJWDWeIZho — Sandy Millar
-    image: "https://images.unsplash.com/photo-1553915632-175f60dd8e36?w=800&q=80&auto=format&fit=crop",
+    // unsplash.com/photos/Pxexdj3Q09g (gold diamond-studded ring on textile) — Gary Yost
+    image: "https://images.unsplash.com/photo-1611955167811-4711904bb9f8?w=800&q=80&auto=format&fit=crop",
   },
 ];
 
@@ -193,7 +194,9 @@ export default async function Home() {
                   alt=""
                   fill
                   sizes="(min-width: 640px) 25vw, 50vw"
-                  className="object-cover transition duration-500 group-hover:scale-110"
+                  className={`object-cover transition duration-500 group-hover:scale-110 ${
+                    o.imagePosition === "right" ? "object-right" : ""
+                  }`}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
                 <span
