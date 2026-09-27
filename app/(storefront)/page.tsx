@@ -10,11 +10,33 @@ import type { ProductCardData } from "@/lib/types";
 
 export const revalidate = 300;
 
+// Free-license Unsplash photos (unsplash.com license — free for commercial
+// use, no attribution required), hotlinked from their CDN.
 const OCCASIONS = [
-  { name: "Everyday", collectionSlug: "daily-wear" },
-  { name: "Office", collectionSlug: "daily-wear" },
-  { name: "Mehndi", collectionSlug: "bridal" },
-  { name: "Nikkah", collectionSlug: "bridal" },
+  {
+    name: "Everyday",
+    collectionSlug: "daily-wear",
+    // unsplash.com/photos/a-close-up-of-a-bracelet-1pP4erq_nbo — Jocelyn Morales
+    image: "https://images.unsplash.com/photo-1655255114527-d0a834d9a774?w=800&q=80&auto=format&fit=crop",
+  },
+  {
+    name: "Office",
+    collectionSlug: "daily-wear",
+    // unsplash.com/photos/modern-office-space-with-a-desk-computer-and-decor-ieDXimQcLeM — Deliberate Directions
+    image: "https://images.unsplash.com/photo-1746021535489-00edc5efb203?w=800&q=80&auto=format&fit=crop",
+  },
+  {
+    name: "Mehndi",
+    collectionSlug: "bridal",
+    // unsplash.com/photos/left-human-hand-with-henna-HF2v2nLxd7w — Mee Nee
+    image: "https://images.unsplash.com/photo-1568566240146-a5e26db3b29b?w=800&q=80&auto=format&fit=crop",
+  },
+  {
+    name: "Nikkah",
+    collectionSlug: "bridal",
+    // unsplash.com/photos/two-gold-colored-rings-on-paper-YeJWDWeIZho — Sandy Millar
+    image: "https://images.unsplash.com/photo-1553915632-175f60dd8e36?w=800&q=80&auto=format&fit=crop",
+  },
 ];
 
 async function getFeaturedProducts(): Promise<ProductCardData[]> {
@@ -160,14 +182,34 @@ export default async function Home() {
           </p>
           <h2 className="mt-2 font-display text-3xl text-foreground">Shop by occasion</h2>
           <div className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-4">
-            {OCCASIONS.map((o) => (
+            {OCCASIONS.map((o, i) => (
               <Link
                 key={o.name}
                 href={`/collections/${o.collectionSlug}`}
-                className="rounded-2xl bg-surface p-6 text-left hover:shadow-sm"
+                className="group relative aspect-4/5 overflow-hidden rounded-2xl shadow-sm transition-shadow hover:shadow-lg"
               >
-                <span className="block text-sm font-medium text-foreground">{o.name}</span>
-                <span className="mt-2 block text-rose">→</span>
+                <Image
+                  src={o.image}
+                  alt=""
+                  fill
+                  sizes="(min-width: 640px) 25vw, 50vw"
+                  className="object-cover transition duration-500 group-hover:scale-110"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
+                <span
+                  className={`absolute right-3 top-3 rounded-full px-2.5 py-1 text-[10px] font-medium uppercase tracking-wider text-white ${
+                    i % 2 === 0 ? "bg-rose/80" : "bg-green-dark/80"
+                  }`}
+                >
+                  {i < 2 ? "Daily" : "Bridal"}
+                </span>
+                <div className="absolute inset-x-0 bottom-0 p-4 text-left">
+                  <span className="block font-display text-lg text-white">{o.name}</span>
+                  <span className="mt-1 flex items-center gap-1 text-xs text-rose-soft opacity-0 transition group-hover:opacity-100">
+                    Shop now
+                    <span className="transition-transform group-hover:translate-x-1">→</span>
+                  </span>
+                </div>
               </Link>
             ))}
           </div>
