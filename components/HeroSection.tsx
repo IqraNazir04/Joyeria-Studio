@@ -52,7 +52,13 @@ function RotatingBadge() {
           <textPath href="#badge-circle" textLength="236" lengthAdjust="spacing">HANDPICKED · GIFT READY · HANDPICKED ·&#160;</textPath>
         </text>
       </motion.svg>
-      <AnimatedDiamondIcon className="absolute left-1/2 top-1/2 h-6 w-6 -translate-x-1/2 -translate-y-1/2 text-rose" />
+      <Image
+        src="/logo/logo-light.png"
+        alt=""
+        width={46}
+        height={60}
+        className="absolute left-1/2 top-1/2 h-11 w-auto -translate-x-1/2 -translate-y-1/2 drop-shadow-sm sm:h-14"
+      />
     </div>
   );
 }
