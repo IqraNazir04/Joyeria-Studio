@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { prisma } from "@/lib/prisma";
-import ProductCard from "@/components/ProductCard";
+import ProductSlider from "@/components/ProductSlider";
 import HeroSection from "@/components/HeroSection";
 import Reveal from "@/components/motion/Reveal";
 import AnimatedDiamondIcon from "@/components/motion/AnimatedDiamondIcon";
@@ -141,10 +141,8 @@ export default async function Home() {
             View all
           </Link>
         </div>
-        <div className="mt-8 grid grid-cols-2 gap-x-4 gap-y-10 sm:grid-cols-3 lg:grid-cols-4">
-          {featured.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
+        <div className="mt-8">
+          <ProductSlider products={featured} />
         </div>
         {featured.length === 0 && (
           <p className="mt-4 text-sm text-muted">

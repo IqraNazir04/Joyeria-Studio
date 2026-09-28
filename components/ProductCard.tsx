@@ -15,6 +15,9 @@ const SPARKLES = [
 
 export default function ProductCard({ product }: { product: ProductCardData }) {
   const onSale = product.compareAtPrice && product.compareAtPrice > product.price;
+  const discountPct = onSale
+    ? Math.round(((product.compareAtPrice! - product.price) / product.compareAtPrice!) * 100)
+    : 0;
 
   return (
     <motion.div
@@ -44,6 +47,12 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
             />
           )}
 
+          {/* A one-time light sweep on hover, matching the hero photo and
+              occasion slider's glint — the same motif reused at product scale. */}
+          <div className="pointer-events-none absolute inset-0 overflow-hidden">
+            <div className="absolute inset-y-0 w-1/4 -translate-x-[150%] -skew-x-12 bg-gradient-to-r from-transparent via-white/40 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-[500%]" />
+          </div>
+
           {product.special && (
             <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
               {SPARKLES.map((s, i) => (
@@ -59,8 +68,8 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
           )}
 
           {onSale && (
-            <span className="absolute left-2 top-2 rounded-full bg-rose px-2 py-1 text-xs text-white">
-              Sale
+            <span className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-rose px-2 py-1 text-xs text-white shadow-sm">
+              -{discountPct}%
             </span>
           )}
           {product.stock === 0 && (
