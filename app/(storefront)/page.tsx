@@ -11,34 +11,11 @@ import type { ProductCardData } from "@/lib/types";
 
 export const revalidate = 300;
 
-// Free-license Unsplash photos (unsplash.com license — free for commercial
-// use, no attribution required), hotlinked from their CDN.
 const OCCASIONS = [
-  {
-    name: "Everyday",
-    collectionSlug: "daily-wear",
-    // unsplash.com/photos/a-white-box-with-gold-jewelry-on-it-MFmHV695pd4 — Nataliia Hordiiuk
-    image: "https://images.unsplash.com/photo-1682823544433-aae34df4e3da?w=800&q=80&auto=format&fit=crop",
-  },
-  {
-    name: "Office",
-    collectionSlug: "daily-wear",
-    // unsplash.com/photos/magic-keyboard-beside-mug-and-click-pen-VieM9BdZKFo — Leone Venter
-    image: "https://images.unsplash.com/photo-1518655048521-f130df041f66?w=800&q=80&auto=format&fit=crop",
-    imagePosition: "right",
-  },
-  {
-    name: "Mehndi",
-    collectionSlug: "bridal",
-    // unsplash.com/photos/marigold-and-jasmine-flower-garlands-EEeGY0XgNSw — Sangram Rakate
-    image: "https://images.unsplash.com/photo-1789971649652-ae5dfeeaa7b4?w=800&q=80&auto=format&fit=crop",
-  },
-  {
-    name: "Nikkah",
-    collectionSlug: "bridal",
-    // unsplash.com/photos/Pxexdj3Q09g (gold diamond-studded ring on textile) — Gary Yost
-    image: "https://images.unsplash.com/photo-1611955167811-4711904bb9f8?w=800&q=80&auto=format&fit=crop",
-  },
+  { name: "Everyday", collectionSlug: "daily-wear", image: "/occasions/everyday.webp" },
+  { name: "Office", collectionSlug: "daily-wear", image: "/occasions/office.webp" },
+  { name: "Mehndi", collectionSlug: "bridal", image: "/occasions/mehndi.webp" },
+  { name: "Nikkah", collectionSlug: "bridal", image: "/occasions/nikkah.webp" },
 ];
 
 async function getFeaturedProducts(): Promise<ProductCardData[]> {

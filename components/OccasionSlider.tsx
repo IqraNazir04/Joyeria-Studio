@@ -9,7 +9,6 @@ type Occasion = {
   name: string;
   collectionSlug: string;
   image: string;
-  imagePosition?: string;
 };
 
 const AUTO_ADVANCE_MS = 4000;
@@ -124,12 +123,10 @@ export default function OccasionSlider({ items }: { items: Occasion[] }) {
             >
               <Image
                 src={o.image}
-                alt=""
+                alt={`${o.name} collection`}
                 fill
                 sizes="(min-width: 1024px) 31vw, (min-width: 640px) 46vw, 78vw"
-                className={`object-cover transition duration-500 group-hover:scale-110 ${
-                  o.imagePosition === "right" ? "object-right" : ""
-                }`}
+                className="object-cover transition duration-500 group-hover:scale-110"
                 priority={i === 0}
               />
               {/* A one-time light sweep across the card on hover, echoing the
@@ -138,17 +135,18 @@ export default function OccasionSlider({ items }: { items: Occasion[] }) {
               <div className="pointer-events-none absolute inset-0 overflow-hidden">
                 <div className="absolute inset-y-0 w-1/3 -translate-x-[150%] -skew-x-12 bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-[350%]" />
               </div>
-              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
               <span
-                className={`absolute right-3 top-3 rounded-full px-2.5 py-1 text-[10px] font-medium uppercase tracking-wider text-white ${
+                className={`absolute right-3 top-3 rounded-full px-2.5 py-1 text-[10px] font-medium uppercase tracking-wider text-white shadow-sm ${
                   i % 2 === 0 ? "bg-rose/80" : "bg-green-dark/80"
                 }`}
               >
                 {i < 2 ? "Daily" : "Bridal"}
               </span>
-              <div className="absolute inset-x-0 bottom-0 p-4 text-left">
-                <span className="block font-display text-lg text-white">{o.name}</span>
-                <span className="mt-1 flex items-center gap-1 text-xs text-rose-soft opacity-0 transition group-hover:opacity-100">
+              {/* The artwork already carries its own title and branding, so
+                  the hover state only needs a call to action, not a second
+                  copy of the name on top of it. */}
+              <div className="absolute inset-x-0 bottom-0 flex items-center justify-center bg-gradient-to-t from-black/70 to-transparent p-4 opacity-0 transition group-hover:opacity-100">
+                <span className="flex items-center gap-1 text-xs font-medium uppercase tracking-wider text-white">
                   Shop now
                   <span className="transition-transform group-hover:translate-x-1">→</span>
                 </span>
