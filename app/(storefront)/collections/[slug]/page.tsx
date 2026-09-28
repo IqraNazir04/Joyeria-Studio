@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import ProductCard from "@/components/ProductCard";
 import PriceFilterPopover from "@/components/PriceFilterPopover";
+import { sortCategories } from "@/lib/categories";
 
 export const revalidate = 300;
 
@@ -11,6 +12,7 @@ type Props = {
   searchParams: Promise<{
     sort?: string;
     material?: string;
+    category?: string;
     minPrice?: string;
     maxPrice?: string;
   }>;
@@ -32,7 +34,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function CollectionPage({ params, searchParams }: Props) {
   const { slug } = await params;
-  const { sort, material, minPrice: minPriceParam, maxPrice: maxPriceParam } = await searchParams;
+  const { sort, material, category: categoryParam, minPrice: minPriceParam, maxPrice: maxPriceParam } =
+    await searchParams;
 
   const collection = await getCollection(slug);
   if (!collection) notFound();
@@ -44,7 +47,7 @@ export default async function CollectionPage({ params, searchParams }: Props) {
         ? { price: "desc" as const }
         : { createdAt: "desc" as const };
 
-  const [priceBounds, materials] = await Promise.all([
+  const [priceBounds, materials, categoryRows] = await Promise.all([
     prisma.product.aggregate({
       where: { collectionId: collection.id, isActive: true },
       _min: { price: true },
@@ -55,7 +58,20 @@ export default async function CollectionPage({ params, searchParams }: Props) {
       select: { material: true },
       distinct: ["material"],
     }),
+    prisma.product.groupBy({
+      by: ["category"],
+      where: { collectionId: collection.id, isActive: true, category: { not: null } },
+      _count: { _all: true },
+    }),
   ]);
+
+  const categories = sortCategories(
+    categoryRows.flatMap((r) => (r.category ? [r.category] : []))
+  );
+  const counts = new Map(categoryRows.map((r) => [r.category, r._count._all]));
+  // Only honor a category that actually exists in this collection — a stray
+  // query string shows everything rather than an empty page.
+  const category = categoryParam && categories.includes(categoryParam) ? categoryParam : undefined;
 
   const bounds = {
     min: priceBounds._min.price ?? 0,
@@ -73,6 +89,7 @@ export default async function CollectionPage({ params, searchParams }: Props) {
       collectionId: collection.id,
       isActive: true,
       ...(material ? { material } : {}),
+      ...(category ? { category } : {}),
       ...(minPrice !== null || maxPrice !== null
         ? {
             price: {
@@ -86,7 +103,7 @@ export default async function CollectionPage({ params, searchParams }: Props) {
     orderBy,
   });
 
-  const otherParams = { sort, material };
+  const otherParams = { sort, material, category };
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
@@ -95,18 +112,50 @@ export default async function CollectionPage({ params, searchParams }: Props) {
         <p className="mt-2 max-w-2xl text-muted">{collection.description}</p>
       )}
 
-      <div className="mt-6 flex flex-wrap items-center gap-3 text-sm">
-        <FilterLink slug={slug} sort={sort} material={material} minPrice={minPriceParam} maxPrice={maxPriceParam} label="All" clearMaterial />
+      {categories.length > 1 && (
+        <div className="mt-6 flex flex-wrap items-center gap-2 text-sm">
+          <span className="mr-1 text-xs font-medium uppercase tracking-[0.15em] text-muted">Type</span>
+          <FilterChip
+            href={buildHref(slug, { sort, material, minPrice: minPriceParam, maxPrice: maxPriceParam })}
+            active={!category}
+            label="All"
+          />
+          {categories.map((c) => (
+            <FilterChip
+              key={c}
+              href={buildHref(slug, { sort, material, category: c, minPrice: minPriceParam, maxPrice: maxPriceParam })}
+              active={category === c}
+              label={c}
+              count={counts.get(c)}
+            />
+          ))}
+        </div>
+      )}
+
+      <div className="mt-4 flex flex-wrap items-center gap-3 text-sm">
+        {materials.length > 0 && (
+          <span className="mr-1 text-xs font-medium uppercase tracking-[0.15em] text-muted">Material</span>
+        )}
+        {materials.length > 0 && (
+          <FilterChip
+            href={buildHref(slug, { sort, category, minPrice: minPriceParam, maxPrice: maxPriceParam })}
+            active={!material}
+            label="All"
+          />
+        )}
         {materials.map(
           (m) =>
             m.material && (
-              <FilterLink
+              <FilterChip
                 key={m.material}
-                slug={slug}
-                sort={sort}
-                material={m.material}
-                minPrice={minPriceParam}
-                maxPrice={maxPriceParam}
+                href={buildHref(slug, {
+                  sort,
+                  material: m.material,
+                  category,
+                  minPrice: minPriceParam,
+                  maxPrice: maxPriceParam,
+                })}
+                active={material === m.material}
                 label={m.material}
               />
             )
@@ -123,8 +172,18 @@ export default async function CollectionPage({ params, searchParams }: Props) {
         )}
 
         <span className="ml-auto flex gap-2">
-          <SortLink slug={slug} material={material} minPrice={minPriceParam} maxPrice={maxPriceParam} sort="price-asc" label="Price: Low to High" />
-          <SortLink slug={slug} material={material} minPrice={minPriceParam} maxPrice={maxPriceParam} sort="price-desc" label="Price: High to Low" />
+          <a
+            href={buildHref(slug, { sort: "price-asc", material, category, minPrice: minPriceParam, maxPrice: maxPriceParam })}
+            className="text-muted hover:text-rose"
+          >
+            Price: Low to High
+          </a>
+          <a
+            href={buildHref(slug, { sort: "price-desc", material, category, minPrice: minPriceParam, maxPrice: maxPriceParam })}
+            className="text-muted hover:text-rose"
+          >
+            Price: High to Low
+          </a>
         </span>
       </div>
 
@@ -172,64 +231,39 @@ function parseBoundedPrice(
   return value;
 }
 
-function FilterLink({
-  slug,
-  sort,
-  material,
-  minPrice,
-  maxPrice,
+function buildHref(slug: string, params: Record<string, string | undefined>) {
+  const qs = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value) qs.set(key, value);
+  }
+  const query = qs.toString();
+  return query ? `/collections/${slug}?${query}` : `/collections/${slug}`;
+}
+
+function FilterChip({
+  href,
+  active,
   label,
-  clearMaterial,
+  count,
 }: {
-  slug: string;
-  sort?: string;
-  material?: string;
-  minPrice?: string;
-  maxPrice?: string;
+  href: string;
+  active: boolean;
   label: string;
-  clearMaterial?: boolean;
+  count?: number;
 }) {
-  const params = new URLSearchParams();
-  if (sort) params.set("sort", sort);
-  if (!clearMaterial && material) params.set("material", material);
-  if (minPrice) params.set("minPrice", minPrice);
-  if (maxPrice) params.set("maxPrice", maxPrice);
-  const active = clearMaterial ? !material : material === label;
   return (
     <a
-      href={`/collections/${slug}?${params.toString()}`}
-      className={`rounded-full border px-3 py-1.5 ${
-        active ? "border-rose bg-rose text-white" : "border-border text-foreground/80"
+      href={href}
+      className={`rounded-full border px-3 py-1.5 transition-colors ${
+        active
+          ? "border-rose bg-rose text-white"
+          : "border-border text-foreground/80 hover:border-rose hover:text-rose"
       }`}
     >
       {label}
-    </a>
-  );
-}
-
-function SortLink({
-  slug,
-  material,
-  minPrice,
-  maxPrice,
-  sort,
-  label,
-}: {
-  slug: string;
-  material?: string;
-  minPrice?: string;
-  maxPrice?: string;
-  sort: string;
-  label: string;
-}) {
-  const params = new URLSearchParams();
-  params.set("sort", sort);
-  if (material) params.set("material", material);
-  if (minPrice) params.set("minPrice", minPrice);
-  if (maxPrice) params.set("maxPrice", maxPrice);
-  return (
-    <a href={`/collections/${slug}?${params.toString()}`} className="text-muted hover:text-rose">
-      {label}
+      {count !== undefined && (
+        <span className={`ml-1.5 text-xs ${active ? "text-white/80" : "text-muted"}`}>{count}</span>
+      )}
     </a>
   );
 }

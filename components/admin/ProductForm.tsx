@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import { slugify } from "@/lib/slugify";
 import type { ProductFormState } from "@/app/admin/products/actions";
+import { PRODUCT_CATEGORIES } from "@/lib/categories";
 
 type ImageInput = { url: string; alt: string };
 
@@ -93,7 +94,18 @@ export default function ProductForm({ action, collections, initial, submitLabel 
           </select>
         </Field>
         <Field label="Category">
-          <input name="category" defaultValue={initial?.category} className="input" placeholder="Earrings" />
+          <input
+            name="category"
+            list="category-options"
+            defaultValue={initial?.category}
+            className="input"
+            placeholder="Earrings"
+          />
+          <datalist id="category-options">
+            {PRODUCT_CATEGORIES.map((c) => (
+              <option key={c} value={c} />
+            ))}
+          </datalist>
         </Field>
         <Field label="Material">
           <input name="material" defaultValue={initial?.material} className="input" placeholder="Gold-plated" />
