@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import Reveal from "@/components/motion/Reveal";
 import FloatingPetals from "@/components/motion/FloatingPetals";
 import AnimatedQuoteMark from "@/components/motion/AnimatedQuoteMark";
+import StoryChapters from "@/components/motion/StoryChapters";
+import StoryImage from "@/components/motion/StoryImage";
 
 // Free-license Unsplash photo (unsplash.com/s/photos/yellow-rose), hotlinked
 // from its CDN per the Unsplash License — attribution isn't required, but
@@ -19,6 +21,24 @@ export const metadata = {
   description:
     "Why Joyería Studio exists, how every piece is chosen, and what we promise you when you order.",
 };
+
+const CHAPTERS = [
+  {
+    title: "A handful of pieces",
+    body: "Like most good things, it started small — a handful of pieces, sourced and tried on before they were ever listed, sold to friends before they were sold to strangers. What people kept coming back for wasn't novelty. It was pieces that held up: plating that didn't fade after two wears, clasps that didn't give out, designs that still looked right a year later.",
+    highlights: ["sold to friends before they were sold to strangers"],
+  },
+  {
+    title: "The bar every piece clears",
+    body: "That's still the bar every piece has to clear before it goes on the site. We keep the catalog small on purpose — daily wear, western statement pieces, and bridal sets for the occasions that matter — because a smaller, better-chosen selection beats an endless scroll of things you'll never actually order.",
+    highlights: ["a smaller, better-chosen selection"],
+  },
+  {
+    title: "No card details upfront",
+    body: "And because we know online jewelry shopping in Pakistan usually means either a random Instagram DM or a checkout that demands your card details upfront, everything here ships cash on delivery, with a real person confirming your order on WhatsApp before it leaves — not an algorithm, not a bot.",
+    highlights: ["cash on delivery", "a real person"],
+  },
+];
 
 const VALUES = [
   {
@@ -73,45 +93,27 @@ export default async function OurStoryPage() {
       </section>
 
       {/* Narrative */}
-      <Reveal as="section" className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
-        <div className="grid items-center gap-12 lg:grid-cols-2">
+      <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
+        <div className="grid items-center gap-16 lg:grid-cols-2">
           <div>
-            <h2 className="font-display text-3xl text-foreground">How it started</h2>
-            <div className="mt-4 space-y-4 text-sm leading-relaxed text-foreground/70">
-              <p>
-                Like most good things, it started small — a handful of pieces, sourced and
-                tried on before they were ever listed, sold to friends before they were sold
-                to strangers. What people kept coming back for wasn&apos;t novelty. It was
-                pieces that held up: plating that didn&apos;t fade after two wears, clasps that
-                didn&apos;t give out, designs that still looked right a year later.
+            <Reveal>
+              <p className="text-xs font-medium uppercase tracking-[0.2em] text-rose">
+                Our beginnings
               </p>
-              <p>
-                That&apos;s still the bar every piece has to clear before it goes on the site. We
-                keep the catalog small on purpose — daily wear, western statement pieces, and
-                bridal sets for the occasions that matter — because a smaller, better-chosen
-                selection beats an endless scroll of things you&apos;ll never actually order.
-              </p>
-              <p>
-                And because we know online jewelry shopping in Pakistan usually means either
-                a random Instagram DM or a checkout that demands your card details upfront,
-                everything here ships cash on delivery, with a real person confirming your
-                order on WhatsApp before it leaves — not an algorithm, not a bot.
-              </p>
-            </div>
+              <h2 className="mt-2 font-display text-3xl text-foreground sm:text-4xl">
+                How it started
+              </h2>
+            </Reveal>
+            <StoryChapters chapters={CHAPTERS} />
           </div>
-          <div className="relative mx-auto aspect-4/5 w-full max-w-sm overflow-hidden rounded-lg bg-rose-soft">
-            {storyProduct?.images[0]?.url && (
-              <Image
-                src={storyProduct.images[0].url}
-                alt={storyProduct.images[0].alt}
-                fill
-                sizes="(min-width: 1024px) 384px, 100vw"
-                className="object-cover"
-              />
-            )}
-          </div>
+          {storyProduct?.images[0]?.url && (
+            <StoryImage
+              src={storyProduct.images[0].url}
+              alt={storyProduct.images[0].alt}
+            />
+          )}
         </div>
-      </Reveal>
+      </section>
 
       {/* Values */}
       <Reveal as="section" className="bg-green-soft py-16">
