@@ -75,33 +75,6 @@ h1, h2, h3, .font-display {
   }
 }
 
-/* Dual-thumb price slider: two overlapping <input type="range"> tracks with
-   pointer-events disabled, leaving only each thumb clickable/draggable. */
-.range-thumb::-webkit-slider-thumb {
-  pointer-events: auto;
-  appearance: none;
-  width: 16px;
-  height: 16px;
-  border-radius: 999px;
-  background: var(--rose);
-  border: 2px solid var(--surface);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
-  cursor: pointer;
-}
-.range-thumb::-moz-range-thumb {
-  pointer-events: auto;
-  width: 16px;
-  height: 16px;
-  border-radius: 999px;
-  background: var(--rose);
-  border: 2px solid var(--surface);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
-  cursor: pointer;
-}
-.range-thumb::-moz-range-track {
-  background: transparent;
-}
-
 /* Hero: animated gold gradient clipped to text, and a looping marquee. */
 .text-gold-shimmer {
   background: linear-gradient(100deg, #f7e082 0%, #d9b23c 30%, #fff3c4 50%, #d9b23c 70%, #f7e082 100%);
