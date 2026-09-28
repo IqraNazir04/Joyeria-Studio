@@ -21,6 +21,7 @@ function parseProductForm(formData: FormData) {
     name,
     slug: String(formData.get("slug") ?? slugify(name)),
     description: String(formData.get("description") ?? ""),
+    sku: String(formData.get("sku") ?? ""),
     material: String(formData.get("material") ?? ""),
     finish: String(formData.get("finish") ?? ""),
     careNote: String(formData.get("careNote") ?? ""),
@@ -58,11 +59,22 @@ export async function createProduct(
     };
   }
 
+  if (parsed.data.sku) {
+    const existingSku = await prisma.product.findUnique({ where: { sku: parsed.data.sku } });
+    if (existingSku) {
+      return {
+        error: "Please fix the errors below.",
+        fieldErrors: { sku: ["A product with this item code already exists"] },
+      };
+    }
+  }
+
   const { images, ...data } = parsed.data;
 
   const product = await prisma.product.create({
     data: {
       ...data,
+      sku: data.sku || null,
       material: data.material || null,
       finish: data.finish || null,
       careNote: data.careNote || null,
@@ -108,6 +120,18 @@ export async function updateProduct(
     };
   }
 
+  if (parsed.data.sku) {
+    const existingSku = await prisma.product.findFirst({
+      where: { sku: parsed.data.sku, id: { not: productId } },
+    });
+    if (existingSku) {
+      return {
+        error: "Please fix the errors below.",
+        fieldErrors: { sku: ["A product with this item code already exists"] },
+      };
+    }
+  }
+
   const { images, ...data } = parsed.data;
   const current = await prisma.product.findUnique({ where: { id: productId } });
   if (!current) return { error: "Product not found" };
@@ -117,6 +141,7 @@ export async function updateProduct(
       where: { id: productId },
       data: {
         ...data,
+        sku: data.sku || null,
         material: data.material || null,
         finish: data.finish || null,
         careNote: data.careNote || null,

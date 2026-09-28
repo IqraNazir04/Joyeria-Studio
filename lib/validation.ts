@@ -49,6 +49,13 @@ export const productSchema = z
       .max(150)
       .regex(/^[a-z0-9-]+$/, "Slug can only contain lowercase letters, numbers and hyphens"),
     description: z.string().trim().min(10, "Add a short description").max(2000),
+    sku: z
+      .string()
+      .trim()
+      .max(50)
+      .regex(/^[A-Za-z0-9-]*$/, "Item code can only contain letters, numbers and hyphens")
+      .optional()
+      .or(z.literal("")),
     material: z.string().trim().max(100).optional().or(z.literal("")),
     finish: z.string().trim().max(100).optional().or(z.literal("")),
     careNote: z.string().trim().max(300).optional().or(z.literal("")),

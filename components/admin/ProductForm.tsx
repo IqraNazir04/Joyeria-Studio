@@ -1,11 +1,11 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useRef, useState } from "react";
 import { slugify } from "@/lib/slugify";
 import type { ProductFormState } from "@/app/admin/products/actions";
 import { PRODUCT_CATEGORIES } from "@/lib/categories";
 
-type ImageInput = { url: string; alt: string };
+type ImageInput = { url: string; alt: string; uploading?: boolean; error?: string };
 
 type Props = {
   action: (state: ProductFormState, formData: FormData) => Promise<ProductFormState>;
@@ -14,6 +14,7 @@ type Props = {
     name: string;
     slug: string;
     description: string;
+    sku: string;
     material: string;
     finish: string;
     careNote: string;
@@ -30,6 +31,19 @@ type Props = {
   submitLabel?: string;
 };
 
+async function uploadFile(file: File): Promise<{ url?: string; error?: string }> {
+  const body = new FormData();
+  body.set("file", file);
+  try {
+    const res = await fetch("/api/admin/upload", { method: "POST", body });
+    const data = await res.json();
+    if (!res.ok) return { error: data.error ?? "Upload failed" };
+    return { url: data.url };
+  } catch {
+    return { error: "Upload failed. Check your connection and try again." };
+  }
+}
+
 export default function ProductForm({ action, collections, initial, submitLabel = "Save Product" }: Props) {
   const [state, formAction, isPending] = useActionState<ProductFormState, FormData>(action, {});
   const [images, setImages] = useState<ImageInput[]>(
@@ -38,8 +52,28 @@ export default function ProductForm({ action, collections, initial, submitLabel 
   const [name, setName] = useState(initial?.name ?? "");
   const [slug, setSlug] = useState(initial?.slug ?? "");
   const [slugTouched, setSlugTouched] = useState(!!initial);
+  const fileInputs = useRef<(HTMLInputElement | null)[]>([]);
 
   const err = (field: string) => state.fieldErrors?.[field]?.[0];
+
+  async function handleFilePick(i: number, file: File | undefined) {
+    if (!file) return;
+    setImages((imgs) => imgs.map((im, j) => (j === i ? { ...im, uploading: true, error: undefined } : im)));
+    const { url, error } = await uploadFile(file);
+    setImages((imgs) =>
+      imgs.map((im, j) =>
+        j === i
+          ? {
+              ...im,
+              uploading: false,
+              error,
+              url: url ?? im.url,
+              alt: im.alt || (url ? file.name.replace(/\.[^.]+$/, "") : im.alt),
+            }
+          : im
+      )
+    );
+  }
 
   return (
     <form action={formAction} className="space-y-6">
@@ -80,7 +114,15 @@ export default function ProductForm({ action, collections, initial, submitLabel 
         />
       </Field>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-4">
+        <Field label="Item Code (SKU)" error={err("sku")}>
+          <input
+            name="sku"
+            defaultValue={initial?.sku}
+            className="input font-mono text-sm"
+            placeholder="JS-BNG-001"
+          />
+        </Field>
         <Field label="Collection" error={err("collectionId")}>
           <select name="collectionId" required defaultValue={initial?.collectionId ?? ""} className="input">
             <option value="" disabled>
@@ -93,7 +135,7 @@ export default function ProductForm({ action, collections, initial, submitLabel 
             ))}
           </select>
         </Field>
-        <Field label="Category">
+        <Field label="Type">
           <input
             name="category"
             list="category-options"
@@ -160,30 +202,62 @@ export default function ProductForm({ action, collections, initial, submitLabel 
           </button>
         </div>
         <p className="mt-1 text-xs text-muted">
-          Paste image URLs for now (Cloudinary upload comes next) — first image is the cover.
+          Upload a photo, or paste an image URL directly — first image is the cover.
         </p>
         {err("images") && <p className="mt-1 text-sm text-red-600">{err("images")}</p>}
         <div className="mt-2 space-y-2">
           {images.map((img, i) => (
-            <div key={i} className="flex gap-2">
+            <div key={i} className="flex items-start gap-2 rounded-lg border border-border p-2">
+              <button
+                type="button"
+                onClick={() => fileInputs.current[i]?.click()}
+                className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md border border-dashed border-border bg-rose-soft/40 text-muted hover:border-rose"
+              >
+                {img.url ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- admin-only preview of an arbitrary/just-uploaded URL, not a storefront asset
+                  <img src={img.url} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <span className="flex h-full w-full items-center justify-center text-lg">+</span>
+                )}
+                {img.uploading && (
+                  <span className="absolute inset-0 flex items-center justify-center bg-black/40 text-xs text-white">
+                    ...
+                  </span>
+                )}
+              </button>
               <input
-                name="imageUrl"
-                value={img.url}
-                onChange={(e) =>
-                  setImages((imgs) => imgs.map((im, j) => (j === i ? { ...im, url: e.target.value } : im)))
-                }
-                placeholder="https://res.cloudinary.com/..."
-                className="input flex-[2]"
+                ref={(el) => {
+                  fileInputs.current[i] = el;
+                }}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/avif"
+                className="hidden"
+                onChange={(e) => {
+                  void handleFilePick(i, e.target.files?.[0]);
+                  e.target.value = "";
+                }}
               />
-              <input
-                name="imageAlt"
-                value={img.alt}
-                onChange={(e) =>
-                  setImages((imgs) => imgs.map((im, j) => (j === i ? { ...im, alt: e.target.value } : im)))
-                }
-                placeholder="Alt text"
-                className="input flex-1"
-              />
+              <div className="flex-1 space-y-1.5">
+                <input
+                  name="imageUrl"
+                  value={img.url}
+                  onChange={(e) =>
+                    setImages((imgs) => imgs.map((im, j) => (j === i ? { ...im, url: e.target.value } : im)))
+                  }
+                  placeholder="Upload a photo, or paste an image URL"
+                  className="input text-xs"
+                />
+                <input
+                  name="imageAlt"
+                  value={img.alt}
+                  onChange={(e) =>
+                    setImages((imgs) => imgs.map((im, j) => (j === i ? { ...im, alt: e.target.value } : im)))
+                  }
+                  placeholder="Alt text"
+                  className="input text-xs"
+                />
+                {img.error && <p className="text-xs text-red-600">{img.error}</p>}
+              </div>
               <button
                 type="button"
                 onClick={() => setImages((imgs) => imgs.filter((_, j) => j !== i))}
