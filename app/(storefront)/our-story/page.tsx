@@ -3,9 +3,10 @@ import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import Reveal from "@/components/motion/Reveal";
 import FloatingPetals from "@/components/motion/FloatingPetals";
-import AnimatedQuoteMark from "@/components/motion/AnimatedQuoteMark";
 import StoryChapters from "@/components/motion/StoryChapters";
 import StoryImage from "@/components/motion/StoryImage";
+import QuotePlaque from "@/components/motion/QuotePlaque";
+import BridalShowcase3D from "@/components/motion/BridalShowcase3DLazy";
 
 // Free-license Unsplash photo (unsplash.com/s/photos/yellow-rose), hotlinked
 // from its CDN per the Unsplash License — attribution isn't required, but
@@ -143,12 +144,9 @@ export default async function OurStoryPage() {
         className="relative overflow-hidden bg-gradient-to-br from-rose-soft via-background to-green-soft py-24"
       >
         <FloatingPetals count={10} seed={31} />
-        <div className="relative mx-auto max-w-3xl px-4 text-center sm:px-6">
-          <AnimatedQuoteMark className="text-4xl sm:text-5xl" />
-          <p className="-mt-4 font-display text-2xl leading-relaxed text-foreground sm:text-3xl">
-            We&apos;re not trying to be everything to everyone. We&apos;re trying to be
-            the jewelry drawer you actually open.
-          </p>
+        <div className="relative mx-auto grid max-w-5xl items-center gap-10 px-4 sm:px-6 lg:grid-cols-2 lg:gap-16">
+          <BridalShowcase3D />
+          <QuotePlaque />
         </div>
       </Reveal>
 
