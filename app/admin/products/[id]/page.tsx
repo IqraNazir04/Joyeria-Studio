@@ -53,6 +53,7 @@ export default async function EditProductPage({ params }: Props) {
             careNote: product.careNote ?? "",
             category: product.category ?? "",
             occasionTags: product.occasionTags,
+            colorTags: product.colorTags,
             tryOnImageUrl: product.tryOnImageUrl ?? "",
             collectionId: product.collectionId ?? "",
             price: product.price,

@@ -3,7 +3,7 @@
 import { useActionState, useRef, useState } from "react";
 import { slugify } from "@/lib/slugify";
 import type { ProductFormState } from "@/app/admin/products/actions";
-import { PRODUCT_CATEGORIES, PRODUCT_OCCASION_TAGS } from "@/lib/categories";
+import { PRODUCT_CATEGORIES, PRODUCT_OCCASION_TAGS, PRODUCT_COLOR_TAGS } from "@/lib/categories";
 
 type ImageInput = { url: string; alt: string; uploading?: boolean; error?: string };
 
@@ -20,6 +20,7 @@ type Props = {
     careNote: string;
     category: string;
     occasionTags: string[];
+    colorTags: string[];
     tryOnImageUrl: string;
     collectionId: string;
     price: number;
@@ -58,6 +59,7 @@ export default function ProductForm({ action, collections, initial, submitLabel 
     url: initial?.tryOnImageUrl ?? "",
   });
   const [occasionTags, setOccasionTags] = useState<string[]>(initial?.occasionTags ?? []);
+  const [colorTags, setColorTags] = useState<string[]>(initial?.colorTags ?? []);
   const fileInputs = useRef<(HTMLInputElement | null)[]>([]);
   const tryOnFileInput = useRef<HTMLInputElement | null>(null);
 
@@ -201,6 +203,35 @@ export default function ProductForm({ action, collections, initial, submitLabel 
                   setOccasionTags((tags) =>
                     e.target.checked ? [...tags, tag] : tags.filter((t) => t !== tag)
                   )
+                }
+                className="sr-only"
+              />
+              {tag}
+            </label>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <span className="text-sm font-medium text-foreground">Color Tags</span>
+        <p className="mt-1 text-xs text-muted">The piece&apos;s own color(s) — pick as many as apply.</p>
+        <div className="mt-2 flex flex-wrap gap-3">
+          {PRODUCT_COLOR_TAGS.map((tag) => (
+            <label
+              key={tag}
+              className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm transition-colors ${
+                colorTags.includes(tag)
+                  ? "border-rose bg-rose-soft/60 text-rose-dark"
+                  : "border-border text-foreground/80"
+              }`}
+            >
+              <input
+                type="checkbox"
+                name="colorTags"
+                value={tag}
+                checked={colorTags.includes(tag)}
+                onChange={(e) =>
+                  setColorTags((tags) => (e.target.checked ? [...tags, tag] : tags.filter((t) => t !== tag)))
                 }
                 className="sr-only"
               />

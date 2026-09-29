@@ -15,6 +15,22 @@ export const PRODUCT_CATEGORIES = [
 // Occasion labels an admin can attach to a product from the admin panel.
 export const PRODUCT_OCCASION_TAGS = ["Daily", "Office", "Party Wear", "Wedding"] as const;
 
+// Color labels an admin can attach to a product from the admin panel — the
+// piece's own visible color(s), not the outfit palette it's matched against.
+export const PRODUCT_COLOR_TAGS = [
+  "Gold",
+  "Silver",
+  "Rose Gold",
+  "White",
+  "Black",
+  "Red",
+  "Pink",
+  "Green",
+  "Blue",
+  "Purple",
+  "Multicolor",
+] as const;
+
 export function sortCategories(categories: string[]): string[] {
   const rank = (c: string) => {
     const i = PRODUCT_CATEGORIES.findIndex((p) => p.toLowerCase() === c.toLowerCase());

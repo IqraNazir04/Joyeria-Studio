@@ -61,6 +61,7 @@ export const productSchema = z
     careNote: z.string().trim().max(300).optional().or(z.literal("")),
     category: z.string().trim().max(100).optional().or(z.literal("")),
     occasionTags: z.array(z.string().trim().max(30)).max(10).default([]),
+    colorTags: z.array(z.string().trim().max(30)).max(10).default([]),
     tryOnImageUrl: z.string().trim().url("Enter a valid image URL").optional().or(z.literal("")),
     collectionId: z.string().trim().min(1, "Select a collection"),
     price: z.coerce.number().int().positive("Price must be greater than 0"),

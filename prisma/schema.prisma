@@ -66,6 +66,11 @@ model Product {
   // scores products against a collection + detected palette instead.
   occasionTags  String[]  @default([])
 
+  // The piece's own visible color(s), hand-tagged by an admin — e.g. Gold,
+  // Red, Multicolor. Distinct from `finish`/`material`, which describe the
+  // metal/stone type rather than a shopper-facing color label.
+  colorTags     String[]  @default([])
+
   // Isolated, transparent-background cutout of just the jewelry — distinct
   // from the catalog photos in `images`, which have their own backgrounds
   // and would show as a pasted rectangle if overlaid on a live camera feed.
