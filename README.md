@@ -4,19 +4,54 @@ Storefront for a Pakistani artificial jewelry business. Guest checkout with cash
 delivery, WhatsApp ordering, and stock-safe order placement — no customer accounts
 required.
 
+## Screenshots
+
+| | |
+|---|---|
+| ![Home page](docs/screenshots/home.png) | ![Collection page with segmented sort](docs/screenshots/collection-sort.png) |
+| Home — hero, category shortcuts | Collection page — Newest / Price ↑ / Price ↓ sort |
+| ![Product detail page](docs/screenshots/product-detail.png) | ![Style My Outfit](docs/screenshots/style-my-outfit.png) |
+| Product page — Try it on button next to Add to Cart | Style My Outfit — upload a photo, get matched jewelry |
+| ![Virtual Try-On](docs/screenshots/try-on.png) | ![3D bridal showcase on Our Story](docs/screenshots/our-story-3d.png) |
+| Virtual Try-On — live AR camera view | Our Story — 3D bridal showcase beside the pull-quote |
+
 ## Stack
 
 Next.js (App Router) · TypeScript · Tailwind CSS v4 · Prisma · PostgreSQL · Zustand ·
-Motion (Framer Motion)
+Motion (Framer Motion) · Three.js · MediaPipe (FaceLandmarker) · Anthropic Claude API
 
 ## What's built
 
-- **Catalog** — home page, collection pages with material filters, a dual-handle
-  price range slider (bounded to that collection's actual min/max, composes with
-  material filter and sort rather than resetting them), product pages with gallery,
-  related products, and `Product` JSON-LD for SEO.
-- **Our Story** (`/our-story`) — brand narrative, values, and a bridal callout. The
-  copy is placeholder-quality writing, not placeholder-quality *content* — but the
+- **Catalog** — home page, collection pages with a segmented Newest / Price ↑ /
+  Price ↓ sort control, product pages with gallery, related products, and
+  `Product` JSON-LD for SEO. Category shortcuts live in the navbar's mega-menu
+  rather than an in-page filter bar (`?category=` on the collection route still
+  works, it's just not exposed as its own filter UI anymore) — an earlier
+  material-filter + price-range-slider bar was simplified away in favor of this,
+  since sort covers what shoppers actually reached for.
+- **Virtual Try-On** (`/try-on`, plus a "Try it on" button next to Add to Cart on
+  any product page with a try-on cutout set) — live AR earrings/tikka/necklace
+  placement on the shopper's own camera feed, powered by MediaPipe's
+  `FaceLandmarker` (468-point face mesh, GPU delegate with automatic CPU
+  fallback) and plain Canvas 2D compositing (`components/tryon/VirtualTryOn.tsx`).
+  Swipe or use the arrows to move between pieces; a camera on/off toggle
+  (top-left) fully releases the media stream rather than just muting it. Only
+  offered for a product once an admin uploads an isolated, transparent-background
+  cutout for it (`Product.tryOnImageUrl`) — the regular catalog photo isn't
+  reused, since overlaying it live would show as a pasted rectangle.
+- **Style My Outfit** (`/style-my-outfit`) — upload a photo of an outfit and get
+  a grid of matching jewelry, addable straight to cart or try-on. Occasion
+  (daily/office, party, or bridal/wedding) is classified by sending the photo to
+  Claude vision (`/api/outfit-style`) rather than a hand-tuned heuristic — an
+  earlier pixel-edge-density approach couldn't tell a busy multi-item flatlay
+  from genuinely embellished fabric, so real image understanding replaced it.
+  Dominant colors are extracted client-side with a small from-scratch k-means
+  pass (`lib/outfit-style.ts`) as a secondary tie-breaker. The detected occasion
+  is always editable via chips if it's wrong.
+- **Our Story** (`/our-story`) — brand narrative, values, a bridal callout, and a
+  real-time 3D bridal jewelry showcase (Three.js, `components/motion/BridalShowcase3D.tsx`)
+  rendered beside the page's pull-quote rather than behind it. The copy is
+  placeholder-quality writing, not placeholder-quality *content* — but the
   specifics (founding year, founder, real numbers) are generic on purpose. Replace
   them with the real story before launch.
 - **Cart & guest checkout** — Zustand cart persisted to `localStorage`, checkout form
@@ -57,8 +92,12 @@ Motion (Framer Motion)
   the full row. Phone numbers aren't secret, so a lookup keyed only on one
   shouldn't also hand over the address, name or delivery phone on a lucky guess.
 - **Admin panel** (`/admin`, NextAuth-protected) — orders (status/courier updates),
-  products (create/edit/delete), collections (create/edit/delete), delivery rates
-  per city (inline add/edit/delete), coupons (create/toggle/delete), review
+  products (create/edit/delete, with image upload straight to Cloudinary or a
+  pasted URL, occasion tags — Daily/Office/Party Wear/Wedding — and color tags,
+  both free-multi-select on the product form), collections (create/edit/delete),
+  an Inventory view (`/admin/inventory` — item code, type, description and cost
+  per product, plus total stock value and a missing-cost-price count), delivery
+  rates per city (inline add/edit/delete), coupons (create/toggle/delete), review
   moderation (approve/delete), and an analytics dashboard (revenue trend, orders
   by status, top products by units sold, grouped by product ID so a rename
   doesn't split a product's own history into two rows — see `lib/analytics.ts`).
@@ -69,13 +108,16 @@ Motion (Framer Motion)
   checkout is, if un-cancelled) — cancellation is the normal way a refused or
   fake COD order gets filtered out, so this runs constantly, not as an edge case.
 - **Customer support chatbot** — a floating widget (storefront only, hidden on
-  `/admin`) backed by `/api/chat` and the Claude API. It's grounded in the live
-  catalog/collections/delivery data pulled fresh from Postgres on every request
-  (see `lib/chat-context.ts`) — small enough to include in full rather than needing
-  vector search. Falls back to a "message us on WhatsApp" prompt if
-  `ANTHROPIC_API_KEY` isn't set, or the catalog grows past what a single context
-  window can hold (at which point swap `buildStoreContext()` for a real embedding
-  search — nothing else depends on how that function is implemented).
+  `/admin`) backed by `/api/chat` and the Claude API, with a `track_order` tool
+  Claude calls when a customer asks about an existing order — it looks the order
+  up by phone (never guesses a status) and reports back only what the tool
+  actually returns. Otherwise it's grounded in the live catalog/collections/delivery
+  data pulled fresh from Postgres on every request (see `lib/chat-context.ts`) —
+  small enough to include in full rather than needing vector search. Falls back
+  to a "message us on WhatsApp" prompt if `ANTHROPIC_API_KEY` isn't set, or the
+  catalog grows past what a single context window can hold (at which point swap
+  `buildStoreContext()` for a real embedding search — nothing else depends on how
+  that function is implemented).
 - **SEO basics** — per-page metadata, `sitemap.ts`, `robots.ts`, JSON-LD on product
   pages.
 - **Motion** — fade-up hero on load, scroll parallax + a one-time light-sweep on the
@@ -107,10 +149,11 @@ Motion (Framer Motion)
   on the icon illustrations — spinning an actual photograph in 3D reads as a
   gimmick, not a product shot.
 
-Not built yet: Cloudinary signed uploads (product images currently take a plain
-URL), bank transfer/JazzCash/Easypaisa screenshot upload (the `Order.paymentProofUrl`
-column exists for this), and coupon UI in the checkout form (the backend already
-validates `couponCode`).
+Not built yet: bank transfer/JazzCash/Easypaisa screenshot upload (the
+`Order.paymentProofUrl` column exists for this), and coupon UI in the checkout
+form (the backend already validates `couponCode`). Try-On also needs an admin to
+actually upload a transparent-cutout image per product before it does anything
+on the storefront — the feature ships empty until that happens.
 
 ## Setup
 
@@ -143,11 +186,23 @@ See `.env.example`. The two that matter immediately:
 webhook and every new order posts a one-line summary there.
 
 `ANTHROPIC_API_KEY` is optional — without it the chat widget shows a WhatsApp
-fallback instead of erroring. Get one at https://console.anthropic.com.
+fallback instead of erroring, and the Style My Outfit page's occasion detection
+returns a clear error asking the shopper to pick an occasion manually instead
+(both features share this one key). Get one at https://console.anthropic.com.
+
+`CLOUDINARY_CLOUD_NAME` / `CLOUDINARY_API_KEY` / `CLOUDINARY_API_SECRET` are
+optional — without them, admin image uploads return a clear error and admins
+can still paste an image URL directly instead. Free tier at
+https://cloudinary.com/console is enough.
 
 `NEXT_PUBLIC_INSTAGRAM_URL` / `NEXT_PUBLIC_FACEBOOK_URL` are optional — set them
 to show real links in the footer and the homepage's "Follow Along" section
 (hidden entirely when unset, rather than linking nowhere).
+
+Virtual Try-On and the 3D bridal showcase need no extra configuration — they
+run entirely client-side (MediaPipe and Three.js assets are fetched from
+`public/`), but Try-On does need at least one product with `tryOnImageUrl` set
+before it shows anything on the storefront.
 
 ## Data model notes
 
@@ -155,8 +210,8 @@ to show real links in the footer and the homepage's "Follow Along" section
 - `OrderItem` snapshots `productName` and `price` at purchase time, and
   `productId` is nullable, so deleting or repricing a product never rewrites past
   orders.
-- `Product.costPrice` is never selected on any storefront query — it's for a future
-  admin margin view only.
+- `Product.costPrice` is never selected on any storefront query — admin-only,
+  surfaced in the Inventory page's stock-value total.
 - Every order starts `PENDING`. The plan is to confirm real orders over WhatsApp
   (there's a "Confirm on WhatsApp" button on the success page) before moving them to
   `CONFIRMED` and shipping — this is what keeps fake COD orders from clogging the
@@ -164,7 +219,9 @@ to show real links in the footer and the homepage's "Follow Along" section
 
 ## Next steps
 
-1. Cloudinary signed uploads for product photos, straight from the browser.
+1. Upload transparent-cutout Try-On images for the earrings/tikka/necklace
+   catalog — the feature is fully built but shows nothing until at least one
+   product has `tryOnImageUrl` set via the admin.
 2. Bank transfer / JazzCash / Easypaisa with screenshot upload (`Order.paymentProofUrl`
    already exists for this).
 3. Coupon UI in the checkout form (the backend already validates `couponCode`).
