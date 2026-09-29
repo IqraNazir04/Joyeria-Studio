@@ -10,6 +10,8 @@ import ProductCard from "@/components/ProductCard";
 import ProductPolicies from "@/components/ProductPolicies";
 import ReviewList from "@/components/ReviewList";
 import ReviewForm from "@/components/ReviewForm";
+import ProductTryOnButton from "@/components/ProductTryOnButton";
+import { tryOnPlacementFor } from "@/lib/tryon";
 
 export const revalidate = 300;
 
@@ -41,6 +43,8 @@ export default async function ProductPage({ params }: Props) {
   const { slug } = await params;
   const product = await getProduct(slug);
   if (!product) notFound();
+
+  const tryOnPlacement = tryOnPlacementFor(product.category);
 
   const [related, reviews] = await Promise.all([
     product.collectionId
@@ -140,6 +144,17 @@ export default async function ProductPage({ params }: Props) {
               image={product.images[0]?.url ?? "/placeholder-jewelry.svg"}
               stock={product.stock}
             />
+            {tryOnPlacement && product.tryOnImageUrl && (
+              <ProductTryOnButton
+                item={{
+                  id: product.id,
+                  name: product.name,
+                  slug: product.slug,
+                  placement: tryOnPlacement,
+                  overlayUrl: product.tryOnImageUrl,
+                }}
+              />
+            )}
             <WhatsAppButton
               message={productWhatsAppMessage(product.name, product.price)}
               className="w-full"

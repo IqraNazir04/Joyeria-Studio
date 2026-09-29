@@ -62,6 +62,8 @@ export default async function Navbar() {
             : undefined,
       };
     }),
+    { href: "/try-on", label: "Try-On" },
+    { href: "/style-my-outfit", label: "Style My Outfit" },
     { href: "/our-story", label: "Our Story" },
     { href: "/track-order", label: "Track Order" },
     { href: "/contact", label: "Contact" },

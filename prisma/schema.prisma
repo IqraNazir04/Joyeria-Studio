@@ -61,6 +61,13 @@ model Product {
   collectionId  String?
   collection    Collection? @relation(fields: [collectionId], references: [id])
 
+  // Isolated, transparent-background cutout of just the jewelry — distinct
+  // from the catalog photos in `images`, which have their own backgrounds
+  // and would show as a pasted rectangle if overlaid on a live camera feed.
+  // Virtual try-on (earrings/tikka/necklaces) is only offered on a product
+  // once this is set.
+  tryOnImageUrl String?
+
   isActive      Boolean   @default(false) // half-finished products never show until explicitly activated
   isFeatured    Boolean   @default(false)
 

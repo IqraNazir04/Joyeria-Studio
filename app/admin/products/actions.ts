@@ -26,6 +26,7 @@ function parseProductForm(formData: FormData) {
     finish: String(formData.get("finish") ?? ""),
     careNote: String(formData.get("careNote") ?? ""),
     category: String(formData.get("category") ?? ""),
+    tryOnImageUrl: String(formData.get("tryOnImageUrl") ?? ""),
     collectionId: String(formData.get("collectionId") ?? ""),
     price: formData.get("price"),
     compareAtPrice: formData.get("compareAtPrice") || null,
@@ -79,6 +80,7 @@ export async function createProduct(
       finish: data.finish || null,
       careNote: data.careNote || null,
       category: data.category || null,
+      tryOnImageUrl: data.tryOnImageUrl || null,
       compareAtPrice: data.compareAtPrice || null,
       costPrice: data.costPrice ?? null,
       images: {
@@ -146,6 +148,7 @@ export async function updateProduct(
         finish: data.finish || null,
         careNote: data.careNote || null,
         category: data.category || null,
+        tryOnImageUrl: data.tryOnImageUrl || null,
         compareAtPrice: data.compareAtPrice || null,
         costPrice: data.costPrice ?? null,
       },

@@ -19,6 +19,7 @@ type Props = {
     finish: string;
     careNote: string;
     category: string;
+    tryOnImageUrl: string;
     collectionId: string;
     price: number;
     compareAtPrice: number | null;
@@ -52,7 +53,11 @@ export default function ProductForm({ action, collections, initial, submitLabel 
   const [name, setName] = useState(initial?.name ?? "");
   const [slug, setSlug] = useState(initial?.slug ?? "");
   const [slugTouched, setSlugTouched] = useState(!!initial);
+  const [tryOnImage, setTryOnImage] = useState<{ url: string; uploading?: boolean; error?: string }>({
+    url: initial?.tryOnImageUrl ?? "",
+  });
   const fileInputs = useRef<(HTMLInputElement | null)[]>([]);
+  const tryOnFileInput = useRef<HTMLInputElement | null>(null);
 
   const err = (field: string) => state.fieldErrors?.[field]?.[0];
 
@@ -73,6 +78,13 @@ export default function ProductForm({ action, collections, initial, submitLabel 
           : im
       )
     );
+  }
+
+  async function handleTryOnFilePick(file: File | undefined) {
+    if (!file) return;
+    setTryOnImage((cur) => ({ ...cur, uploading: true, error: undefined }));
+    const { url, error } = await uploadFile(file);
+    setTryOnImage((cur) => ({ url: url ?? cur.url, uploading: false, error }));
   }
 
   return (
@@ -267,6 +279,64 @@ export default function ProductForm({ action, collections, initial, submitLabel 
               </button>
             </div>
           ))}
+        </div>
+      </div>
+
+      <div>
+        <span className="text-sm font-medium text-foreground">Try-On Overlay (AR)</span>
+        <p className="mt-1 text-xs text-muted">
+          An isolated cutout of just the jewelry, transparent background (PNG) — not a catalog photo. Only shown for
+          Earrings, Tikka and Necklaces categories. Leave empty and the storefront simply won&apos;t offer try-on
+          for this product.
+        </p>
+        <div className="mt-2 flex items-start gap-2 rounded-lg border border-border p-2">
+          <button
+            type="button"
+            onClick={() => tryOnFileInput.current?.click()}
+            className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md border border-dashed border-border bg-[repeating-conic-gradient(#e5e5e5_0%_25%,transparent_0%_50%)] bg-[length:10px_10px] text-muted hover:border-rose"
+          >
+            {tryOnImage.url ? (
+              // eslint-disable-next-line @next/next/no-img-element -- admin-only preview of an arbitrary/just-uploaded URL, not a storefront asset
+              <img src={tryOnImage.url} alt="" className="h-full w-full object-contain" />
+            ) : (
+              <span className="flex h-full w-full items-center justify-center text-lg">+</span>
+            )}
+            {tryOnImage.uploading && (
+              <span className="absolute inset-0 flex items-center justify-center bg-black/40 text-xs text-white">
+                ...
+              </span>
+            )}
+          </button>
+          <input
+            ref={tryOnFileInput}
+            type="file"
+            accept="image/png,image/webp"
+            className="hidden"
+            onChange={(e) => {
+              void handleTryOnFilePick(e.target.files?.[0]);
+              e.target.value = "";
+            }}
+          />
+          <div className="flex-1 space-y-1.5">
+            <input
+              name="tryOnImageUrl"
+              value={tryOnImage.url}
+              onChange={(e) => setTryOnImage({ url: e.target.value })}
+              placeholder="Upload a transparent PNG, or paste an image URL"
+              className="input text-xs"
+            />
+            {err("tryOnImageUrl") && <p className="text-xs text-red-600">{err("tryOnImageUrl")}</p>}
+            {tryOnImage.error && <p className="text-xs text-red-600">{tryOnImage.error}</p>}
+          </div>
+          {tryOnImage.url && (
+            <button
+              type="button"
+              onClick={() => setTryOnImage({ url: "" })}
+              className="px-2 text-sm text-muted hover:text-red-600"
+            >
+              ✕
+            </button>
+          )}
         </div>
       </div>
 
