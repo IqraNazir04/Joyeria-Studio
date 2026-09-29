@@ -5,7 +5,7 @@ import type { FaceLandmarker, NormalizedLandmark } from "@mediapipe/tasks-vision
 import { getFaceLandmarker } from "@/lib/tryon-face-landmarker";
 import type { TryOnItem } from "@/lib/tryon";
 
-type Status = "starting" | "unsupported" | "denied" | "camera-error" | "ready";
+type Status = "starting" | "unsupported" | "denied" | "camera-error" | "ready" | "off";
 
 const LEFT_FACE = 234;
 const RIGHT_FACE = 454;
@@ -71,6 +71,7 @@ export default function VirtualTryOn({
   const [status, setStatus] = useState<Status>("starting");
   const [faceFound, setFaceFound] = useState(false);
   const [index, setIndex] = useState(startIndex);
+  const [cameraOn, setCameraOn] = useState(true);
 
   useEffect(() => {
     currentIndexRef.current = index;
@@ -98,12 +99,29 @@ export default function VirtualTryOn({
   }, [items]);
 
   useEffect(() => {
-    if (!navigator.mediaDevices?.getUserMedia) {
-      queueMicrotask(() => setStatus("unsupported"));
-      return;
+    let cancelled = false;
+
+    // Turning the camera off releases the stream outright (stopping every
+    // track) rather than just muting it, so the browser's recording
+    // indicator actually goes away — same as leaving the page.
+    if (!cameraOn) {
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+      if (videoRef.current) videoRef.current.srcObject = null;
+      queueMicrotask(() => setStatus("off"));
+      return () => {
+        cancelled = true;
+      };
     }
 
-    let cancelled = false;
+    if (!navigator.mediaDevices?.getUserMedia) {
+      queueMicrotask(() => setStatus("unsupported"));
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    queueMicrotask(() => setStatus((s) => (s === "ready" ? s : "starting")));
 
     (async () => {
       try {
@@ -141,7 +159,7 @@ export default function VirtualTryOn({
       streamRef.current?.getTracks().forEach((t) => t.stop());
       streamRef.current = null;
     };
-  }, []);
+  }, [cameraOn]);
 
   // A ref rather than a memoized callback: the loop reschedules itself every
   // frame, and calling a stale closure of itself (captured `items`/state from
@@ -292,6 +310,19 @@ export default function VirtualTryOn({
         {status === "camera-error" && (
           <StatusOverlay>Couldn&apos;t start the camera. Make sure no other app is using it, then reload.</StatusOverlay>
         )}
+        {status === "off" && (
+          <StatusOverlay>
+            <div className="flex flex-col items-center gap-3">
+              <span>Camera is off.</span>
+              <button
+                onClick={() => setCameraOn(true)}
+                className="rounded-full bg-white px-4 py-2 text-sm font-medium text-black hover:bg-white/90"
+              >
+                Turn camera on
+              </button>
+            </div>
+          </StatusOverlay>
+        )}
         {status === "ready" && !faceFound && (
           <div className="pointer-events-none absolute inset-x-0 top-4 flex justify-center">
             <span className="rounded-full bg-black/60 px-3 py-1 text-xs text-white">
@@ -307,6 +338,17 @@ export default function VirtualTryOn({
         >
           ✕
         </button>
+
+        {(status === "ready" || status === "off") && (
+          <button
+            onClick={() => setCameraOn((on) => !on)}
+            aria-label={cameraOn ? "Turn camera off" : "Turn camera on"}
+            aria-pressed={cameraOn}
+            className="absolute left-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/70"
+          >
+            {cameraOn ? "⏻" : "⏼"}
+          </button>
+        )}
 
         {items.length > 1 && (
           <>
