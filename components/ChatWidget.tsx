@@ -12,8 +12,15 @@ type LinkItem = { name: string; slug: string };
 
 const GREETING: ChatMessage = {
   role: "assistant",
-  content: "Hi! I'm the Joyería Studio assistant. Ask me about products, prices, delivery or how to order.",
+  content: "Hi! I'm the Joyería Studio assistant. Ask me about products, delivery, returns or an order you've placed.",
 };
+
+const QUICK_QUESTIONS = [
+  "Track my order",
+  "What are the delivery charges?",
+  "What's your return & exchange policy?",
+  "What payment methods do you accept?",
+];
 
 export default function ChatWidget({
   collections = [],
@@ -30,6 +37,21 @@ export default function ChatWidget({
   const [fallback, setFallback] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Every open is a fresh conversation — closing and reopening (or coming
+  // back later) starts over from the greeting and quick-reply suggestions
+  // rather than resuming whatever was asked last time.
+  function toggleOpen() {
+    setOpen((wasOpen) => {
+      const opening = !wasOpen;
+      if (opening) {
+        setMessages([GREETING]);
+        setInput("");
+        setFallback(null);
+      }
+      return opening;
+    });
+  }
+
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, open]);
@@ -37,9 +59,7 @@ export default function ChatWidget({
   // Keep the assistant off the admin dashboard — it's a storefront helper, not a backoffice tool.
   if (pathname?.startsWith("/admin")) return null;
 
-  async function handleSend(e: React.FormEvent) {
-    e.preventDefault();
-    const text = input.trim();
+  async function sendMessage(text: string) {
     if (!text || sending) return;
 
     const nextMessages = [...messages, { role: "user" as const, content: text }];
@@ -69,6 +89,16 @@ export default function ChatWidget({
     }
   }
 
+  function handleSend(e: React.FormEvent) {
+    e.preventDefault();
+    void sendMessage(input.trim());
+  }
+
+  const lastUserMessage = [...messages].reverse().find((m) => m.role === "user")?.content;
+  const whatsAppMessage = lastUserMessage
+    ? `Hi! I have a question: ${lastUserMessage}`
+    : "Hi! I have a question.";
+
   return (
     <div className="fixed bottom-5 right-5 z-50">
       {open && (
@@ -88,8 +118,19 @@ export default function ChatWidget({
               <ChatMessageBubble key={i} role={m.role} content={m.content} />
             ))}
 
-            {messages.length === 1 && (collections.length > 0 || featuredProducts.length > 0) && (
-              <div className="space-y-2">
+            {messages.length === 1 && (
+              <div className="space-y-3">
+                <QuickLinkRow label="Common questions">
+                  {QUICK_QUESTIONS.map((q) => (
+                    <button
+                      key={q}
+                      onClick={() => sendMessage(q)}
+                      className="rounded-full border border-green px-3 py-1 text-xs text-green-dark hover:bg-green hover:text-white"
+                    >
+                      {q}
+                    </button>
+                  ))}
+                </QuickLinkRow>
                 {collections.length > 0 && (
                   <QuickLinkRow label="Browse">
                     {collections.map((c) => (
@@ -109,7 +150,7 @@ export default function ChatWidget({
                       <Link
                         key={p.slug}
                         href={`/products/${p.slug}`}
-                        className="rounded-full border border-green px-3 py-1 text-xs text-green-dark hover:bg-green hover:text-white"
+                        className="rounded-full border border-border px-3 py-1 text-xs text-foreground/80 hover:border-rose hover:text-rose"
                       >
                         {p.name}
                       </Link>
@@ -124,7 +165,7 @@ export default function ChatWidget({
               <div className="rounded-2xl bg-zinc-100 px-3 py-2 text-sm text-foreground">
                 {fallback}{" "}
                 <a
-                  href={buildWhatsAppLink("Hi! I have a question.")}
+                  href={buildWhatsAppLink(whatsAppMessage)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="font-medium text-green-dark underline"
@@ -154,7 +195,7 @@ export default function ChatWidget({
       )}
 
       <button
-        onClick={() => setOpen((o) => !o)}
+        onClick={toggleOpen}
         aria-label={open ? "Close chat" : "Open chat"}
         className="flex h-14 w-14 items-center justify-center rounded-full bg-green text-white shadow-lg hover:bg-green-dark"
       >
