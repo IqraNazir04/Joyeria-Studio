@@ -34,16 +34,36 @@ function rgbToHsl({ r, g, b }: RGB): { h: number; s: number; l: number } {
   return { h, s, l };
 }
 
-/** Reads pixels from a downsampled draw of the image (cheap, no need for
- * full resolution) and runs a small k-means pass to find dominant colors. */
+const FALLBACK_PALETTE: OutfitPalette = { warmth: "neutral", depth: "medium", swatches: [] };
+
+/** Reads pixels from a downsampled, lightly center-cropped draw of the image
+ * and runs a small k-means pass to find dominant colors. This is the one
+ * part of outfit matching that's genuinely reliable client-side — occasion
+ * (daily/party/bridal) needs real image understanding and is handled by the
+ * /api/outfit-style route instead; an earlier edge-density heuristic here
+ * for that was scrapped after failing on real photos (a plain office flatlay
+ * with several objects reads just as "busy" as a heavily embroidered dress
+ * when you're only measuring pixel-to-pixel contrast). */
 export function extractPalette(img: HTMLImageElement, k = 5): OutfitPalette {
   const size = 64;
   const canvas = document.createElement("canvas");
   canvas.width = size;
   canvas.height = size;
   const ctx = canvas.getContext("2d");
-  if (!ctx) return { warmth: "neutral", depth: "medium", swatches: [] };
-  ctx.drawImage(img, 0, 0, size, size);
+  if (!ctx) return FALLBACK_PALETTE;
+
+  // A light center-crop of the source image before downsampling — outfit
+  // photos often have background (wall, floor, backdrop) at the edges, and
+  // this cheaply favors whatever's in the middle of the frame without doing
+  // real subject segmentation.
+  const cropFrac = 0.8;
+  const sw = img.naturalWidth || img.width;
+  const sh = img.naturalHeight || img.height;
+  const cw = sw * cropFrac;
+  const ch = sh * cropFrac;
+  const sx = (sw - cw) / 2;
+  const sy = (sh - ch) / 2;
+  ctx.drawImage(img, sx, sy, cw, ch, 0, 0, size, size);
 
   let data: Uint8ClampedArray;
   try {
@@ -51,7 +71,7 @@ export function extractPalette(img: HTMLImageElement, k = 5): OutfitPalette {
   } catch {
     // A cross-origin image without CORS headers taints the canvas — can't
     // read it back. Caller falls back to a neutral palette in that case.
-    return { warmth: "neutral", depth: "medium", swatches: [] };
+    return FALLBACK_PALETTE;
   }
 
   const pixels: RGB[] = [];
@@ -59,7 +79,7 @@ export function extractPalette(img: HTMLImageElement, k = 5): OutfitPalette {
     if (data[i + 3] < 128) continue; // skip transparent
     pixels.push({ r: data[i], g: data[i + 1], b: data[i + 2] });
   }
-  if (pixels.length === 0) return { warmth: "neutral", depth: "medium", swatches: [] };
+  if (pixels.length === 0) return FALLBACK_PALETTE;
 
   let centroids = Array.from({ length: k }, (_, i) => pixels[Math.floor((i / k) * pixels.length)]);
   const assignments = new Array(pixels.length).fill(0);
@@ -128,6 +148,18 @@ export function extractPalette(img: HTMLImageElement, k = 5): OutfitPalette {
   return { warmth, depth, swatches: clusters.slice(0, 5).map((c) => toHex(c.color)) };
 }
 
+export type Occasion = "daily" | "party" | "bridal";
+
+export const OCCASION_OPTIONS: { value: Occasion; label: string; collectionSlug: string }[] = [
+  { value: "daily", label: "Daily & Office", collectionSlug: "daily-wear" },
+  { value: "party", label: "Party & Going Out", collectionSlug: "western" },
+  { value: "bridal", label: "Wedding & Traditional", collectionSlug: "bridal" },
+];
+
+// Office wear specifically favors the smaller, quieter categories within
+// Daily Wear over its bangles/sets — a subtle nudge, not a hard filter.
+const OFFICE_LEANING_CATEGORIES = new Set(["earrings", "rings", "pendants", "necklaces"]);
+
 export type StyleProduct = {
   id: string;
   name: string;
@@ -142,6 +174,7 @@ export type StyleProduct = {
   tryOnImageUrl: string | null;
   coverImage: string;
   coverImageAlt: string;
+  collectionSlug: string | null;
 };
 
 function finishWarmth(finish: string | null): Warmth {
@@ -158,27 +191,45 @@ function materialDepth(material: string | null): Depth {
   return "medium";
 }
 
-/** Rule-based, transparent scoring against a customer's outfit palette — not
- * a black-box model. Warm/cool comes from the metal finish (the strongest
- * visual color cue a piece has); light/dark is a secondary nudge from the
- * stone/material. Both fall back to a small "neutral pairs with anything"
- * bonus rather than excluding a piece outright. */
-export function scoreProductForPalette(p: StyleProduct, palette: OutfitPalette): number {
+/** Rule-based, transparent scoring — not a black-box model. Occasion (which
+ * collection the piece belongs to) is the dominant signal, since a bridal
+ * set is wrong for a daily look regardless of color; the outfit's palette
+ * only breaks ties within that. Both fall back to a small "pairs with
+ * anything" bonus rather than excluding a piece outright. */
+export function scoreProduct(p: StyleProduct, occasion: Occasion, palette: OutfitPalette | null): number {
   let score = 0;
-  const fw = finishWarmth(p.finish);
-  if (fw === palette.warmth) score += 3;
-  else if (fw === "neutral") score += 1;
 
-  const md = materialDepth(p.material);
-  if (md === palette.depth) score += 2;
-  else if (md === "medium") score += 1;
+  const wantedCollection = OCCASION_OPTIONS.find((o) => o.value === occasion)?.collectionSlug;
+  if (p.collectionSlug && wantedCollection && p.collectionSlug === wantedCollection) score += 6;
+  else if (!p.collectionSlug) score += 1;
+
+  if (occasion === "daily" && OFFICE_LEANING_CATEGORIES.has((p.category ?? "").toLowerCase())) {
+    score += 1;
+  }
+
+  // Gold is the near-universal convention for festive/bridal jewelry in this
+  // market regardless of the outfit's own color — a purple or blue party
+  // outfit is still paired with gold far more often than silver.
+  if ((occasion === "party" || occasion === "bridal") && finishWarmth(p.finish) === "warm") {
+    score += 2;
+  }
+
+  if (palette) {
+    const fw = finishWarmth(p.finish);
+    if (fw === palette.warmth) score += 3;
+    else if (fw === "neutral") score += 1;
+
+    const md = materialDepth(p.material);
+    if (md === palette.depth) score += 2;
+    else if (md === "medium") score += 1;
+  }
 
   if (p.isFeatured) score += 0.5;
   return score;
 }
 
-export function rankProductsForPalette(products: StyleProduct[], palette: OutfitPalette): StyleProduct[] {
+export function rankProducts(products: StyleProduct[], occasion: Occasion, palette: OutfitPalette | null): StyleProduct[] {
   return [...products]
     .filter((p) => p.stock > 0)
-    .sort((a, b) => scoreProductForPalette(b, palette) - scoreProductForPalette(a, palette));
+    .sort((a, b) => scoreProduct(b, occasion, palette) - scoreProduct(a, occasion, palette));
 }

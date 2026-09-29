@@ -6,7 +6,7 @@ export const revalidate = 300;
 
 export const metadata = {
   title: "Style My Outfit",
-  description: "Upload a photo of your outfit and find jewelry that matches its colors.",
+  description: "Pick the occasion, upload your outfit, and find jewelry that matches both.",
 };
 
 export default async function StyleMyOutfitPage() {
@@ -24,6 +24,7 @@ export default async function StyleMyOutfitPage() {
       finish: true,
       isFeatured: true,
       tryOnImageUrl: true,
+      collection: { select: { slug: true } },
       images: { orderBy: { sortOrder: "asc" }, take: 1 },
     },
     orderBy: { createdAt: "desc" },
@@ -43,6 +44,7 @@ export default async function StyleMyOutfitPage() {
     tryOnImageUrl: p.tryOnImageUrl,
     coverImage: p.images[0]?.url ?? "/placeholder-jewelry.svg",
     coverImageAlt: p.images[0]?.alt ?? p.name,
+    collectionSlug: p.collection?.slug ?? null,
   }));
 
   return (
@@ -51,8 +53,8 @@ export default async function StyleMyOutfitPage() {
         <p className="text-xs font-medium uppercase tracking-[0.2em] text-rose">Style My Outfit</p>
         <h1 className="mt-2 font-display text-3xl text-foreground">Match it before you wear it</h1>
         <p className="mt-2 text-sm text-foreground/70">
-          Upload a photo of your dress or outfit — we&apos;ll pick out its colors and show you jewelry that pairs
-          with it, ready to add to your bag or try on.
+          Upload a photo of your outfit — we&apos;ll pick out its colors and how dressy it looks, and suggest
+          jewelry to match. You can always pick the occasion yourself instead.
         </p>
       </div>
 
