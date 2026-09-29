@@ -61,6 +61,11 @@ model Product {
   collectionId  String?
   collection    Collection? @relation(fields: [collectionId], references: [id])
 
+  // Free-form occasion labels an admin assigns by hand (Daily, Office, Party
+  // Wear, Wedding) — distinct from the Style My Outfit matching engine, which
+  // scores products against a collection + detected palette instead.
+  occasionTags  String[]  @default([])
+
   // Isolated, transparent-background cutout of just the jewelry — distinct
   // from the catalog photos in `images`, which have their own backgrounds
   // and would show as a pasted rectangle if overlaid on a live camera feed.

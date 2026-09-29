@@ -26,6 +26,7 @@ function parseProductForm(formData: FormData) {
     finish: String(formData.get("finish") ?? ""),
     careNote: String(formData.get("careNote") ?? ""),
     category: String(formData.get("category") ?? ""),
+    occasionTags: formData.getAll("occasionTags") as string[],
     tryOnImageUrl: String(formData.get("tryOnImageUrl") ?? ""),
     collectionId: String(formData.get("collectionId") ?? ""),
     price: formData.get("price"),

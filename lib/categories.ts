@@ -12,6 +12,9 @@ export const PRODUCT_CATEGORIES = [
   "Tikka",
 ] as const;
 
+// Occasion labels an admin can attach to a product from the admin panel.
+export const PRODUCT_OCCASION_TAGS = ["Daily", "Office", "Party Wear", "Wedding"] as const;
+
 export function sortCategories(categories: string[]): string[] {
   const rank = (c: string) => {
     const i = PRODUCT_CATEGORIES.findIndex((p) => p.toLowerCase() === c.toLowerCase());
