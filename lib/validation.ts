@@ -34,8 +34,18 @@ export const checkoutSchema = z.object({
 
 export type CheckoutInput = z.infer<typeof checkoutSchema>;
 
+// A full URL (Cloudinary, Unsplash) or a path to a file in public/, e.g.
+// "/products/set.jpg" — "//host/..." is excluded since it points off-site.
+const imageUrlSchema = z
+  .string()
+  .trim()
+  .refine(
+    (v) => (v.startsWith("/") && !v.startsWith("//")) || z.string().url().safeParse(v).success,
+    "Enter a valid image URL"
+  );
+
 export const productImageSchema = z.object({
-  url: z.string().trim().url("Enter a valid image URL"),
+  url: imageUrlSchema,
   alt: z.string().trim().min(1, "Alt text is required"),
 });
 
@@ -62,7 +72,7 @@ export const productSchema = z
     category: z.string().trim().max(100).optional().or(z.literal("")),
     occasionTags: z.array(z.string().trim().max(30)).max(10).default([]),
     colorTags: z.array(z.string().trim().max(30)).max(10).default([]),
-    tryOnImageUrl: z.string().trim().url("Enter a valid image URL").optional().or(z.literal("")),
+    tryOnImageUrl: imageUrlSchema.optional().or(z.literal("")),
     collectionId: z.string().trim().min(1, "Select a collection"),
     price: z.coerce.number().int().positive("Price must be greater than 0"),
     compareAtPrice: z.coerce.number().int().positive().optional().nullable(),
@@ -99,7 +109,7 @@ export const collectionSchema = z.object({
     .max(100)
     .regex(/^[a-z0-9-]+$/, "Slug can only contain lowercase letters, numbers and hyphens"),
   description: z.string().trim().max(500).optional().or(z.literal("")),
-  coverImage: z.string().trim().url("Enter a valid image URL").optional().or(z.literal("")),
+  coverImage: imageUrlSchema.optional().or(z.literal("")),
   featured: z.coerce.boolean(),
   sortOrder: z.coerce.number().int(),
 });

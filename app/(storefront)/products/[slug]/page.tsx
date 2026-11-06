@@ -73,7 +73,8 @@ export default async function ProductPage({ params }: Props) {
     "@type": "Product",
     name: product.name,
     description: product.description,
-    image: product.images.map((i) => i.url),
+    // Images can be site paths ("/products/x.jpg"); structured data needs absolute URLs.
+    image: product.images.map((i) => new URL(i.url, process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").href),
     offers: {
       "@type": "Offer",
       priceCurrency: "PKR",
